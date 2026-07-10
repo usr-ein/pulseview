@@ -68,3 +68,8 @@ test/cmake_install.cmake
 
 # Translation binaries
 *.qm
+/PulseView.app
+*.zip
+/.qt/
+/build/
+/sigrok-prefix/
