@@ -17,6 +17,12 @@ OUT="${OUT:-${APP%.app}-arm64.zip}"
 
 [ -d "$APP" ] || { echo "no such app: $APP"; exit 1; }
 
+# Strip Python bytecode caches: if the app was launched before signing, Python
+# may have written __pycache__/*.pyc into the bundle, which breaks the code
+# seal and makes notarization fail with "the signature of the binary is invalid".
+find "$APP/Contents" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+find "$APP/Contents" -name '*.pyc' -delete 2>/dev/null || true
+
 echo ">> signing nested code inside-out (hardened runtime)"
 find "$APP/Contents/Frameworks" "$APP/Contents/PlugIns" -type f \( -name '*.dylib' -o -name '*.so' \) \
   -exec codesign --force --options runtime --timestamp -s "$IDENTITY" {} \;

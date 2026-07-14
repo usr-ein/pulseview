@@ -142,6 +142,8 @@ int main(int argc, char **argv){
 	snprintf(buf,sizeof(buf),"%s/Resources/share/libsigrokdecode/decoders",croot); setenv("SIGROKDECODE_DIR",buf,1);
 	snprintf(buf,sizeof(buf),"%s/Resources/share/sigrok-firmware",croot); setenv("SIGROK_FIRMWARE_DIR",buf,1);
 	snprintf(buf,sizeof(buf),"%s/Frameworks/Python.framework/Versions/3.12",croot); setenv("PYTHONHOME",buf,1);
+	/* never write .pyc into the signed bundle -> keeps the code-signature seal intact */
+	setenv("PYTHONDONTWRITEBYTECODE","1",1);
 	snprintf(buf,sizeof(buf),"%s/pulseview.bin",md); argv[0]=buf;
 	execv(buf,argv); perror("execv"); return 127;
 }
@@ -149,6 +151,10 @@ C
 clang -arch arm64 -O2 -o "$C/launcher.tmp" "$C/../launcher.c"; rm -f "$C/../launcher.c"
 mv "$MAC/pulseview" "$MAC/pulseview.bin"
 mv "$C/launcher.tmp" "$MAC/pulseview"; chmod +x "$MAC/pulseview"
+
+# ---- strip any bytecode caches so they can't break the code-signature seal ----
+find "$C" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+find "$C" -name '*.pyc' -delete 2>/dev/null || true
 
 # ---- ad-hoc sign (replace '-' with your Developer ID for distribution) ----
 IDENTITY="${IDENTITY:--}"
